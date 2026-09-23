@@ -21,7 +21,7 @@ export function ModerationQueuePage() {
     setBusyId(reportId);
     setActionError(null);
     try {
-      await resolveReportRequest(reportId, decision, `${decision} via Bira Control Portal`);
+      await resolveReportRequest(reportId, decision, `${decision} via Ogasela Control Portal`);
       refetch();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Could not apply that decision.");
@@ -34,7 +34,7 @@ export function ModerationQueuePage() {
     setBusyId(verificationId);
     setActionError(null);
     try {
-      await decideManualReview(verificationId, decision, `${decision} via Bira Control Portal`);
+      await decideManualReview(verificationId, decision, `${decision} via Ogasela Control Portal`);
       refetch();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Could not apply that decision.");

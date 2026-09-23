@@ -20,7 +20,7 @@ function resolveTitle(pathname: string): string {
   // Param routes (e.g. /staff/:id) aren't in the exact-match table above - fall back to the
   // nearest parent segment's title rather than adding one entry per possible id.
   if (pathname.startsWith("/staff/")) return "Staff";
-  return "Bira Control Portal";
+  return "Ogasela Control Portal";
 }
 
 export function AppLayout() {
@@ -32,7 +32,7 @@ export function AppLayout() {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar title={title} />
-        <main className="scrollbar-thin flex-1 overflow-y-auto p-8">
+        <main className="scrollbar-thin flex-1 overflow-y-auto bg-linear-to-b from-brand-50/40 via-surface to-surface p-8">
           <Outlet />
         </main>
       </div>

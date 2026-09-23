@@ -1,5 +1,6 @@
 import { LogOut } from "lucide-react";
 import { useAuth } from "../lib/auth";
+import { Badge } from "./Badge";
 
 const ROLE_LABEL: Record<string, string> = {
   SuperAdmin: "Super Admin",
@@ -17,17 +18,17 @@ export function Topbar({ title }: { title: string }) {
   const roleLabel = user?.staffProfile?.roleName ?? (user ? (ROLE_LABEL[user.role] ?? user.role) : "");
 
   return (
-    <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-black/5 bg-white px-8">
+    <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-black/5 bg-white/80 px-8 backdrop-blur-sm">
       <h1 className="text-lg font-semibold text-ink">{title}</h1>
 
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">
+        <div className="flex items-center gap-3 border-r border-black/5 pr-4">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-brand-400 to-brand-600 text-sm font-semibold text-white shadow-[0_2px_6px_rgba(11,110,79,0.3)]">
             {initial}
           </span>
           <div className="leading-tight">
             <p className="text-sm font-medium text-ink">{displayName}</p>
-            <p className="text-xs text-ink-muted">{roleLabel}</p>
+            <Badge tone="brand">{roleLabel}</Badge>
           </div>
         </div>
 

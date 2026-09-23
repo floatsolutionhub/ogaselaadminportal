@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { ArrowLeft, KeyRound, Lock, Mail } from "lucide-react";
 import { useAuth } from "../lib/auth";
 import { ApiError } from "../lib/apiClient";
-import { Logo } from "../components/Logo";
+import { AuthShell } from "../components/AuthShell";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { Spinner } from "../components/Spinner";
 
@@ -59,18 +59,14 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex justify-center">
-          <Logo />
-        </div>
-
-        <div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-[0_1px_3px_rgba(16,24,40,0.08),0_1px_2px_rgba(16,24,40,0.04)]">
-          <div className="h-1 bg-brand-500" />
+    <AuthShell>
+      <div>
+        <div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-[0_20px_50px_-12px_rgba(6,61,44,0.25),0_1px_2px_rgba(16,24,40,0.04)]">
+          <div className="h-1.5 bg-linear-to-r from-brand-400 via-brand-500 to-brand-600" />
 
           {step.name === "credentials" ? (
             <div className="p-8">
-              <h1 className="text-xl font-bold text-ink">Bira Control Portal</h1>
+              <h1 className="text-xl font-bold text-ink">Ogasela Control Portal</h1>
               <p className="mt-1 text-sm text-ink-muted">Sign in with your admin account to continue.</p>
 
               <form className="mt-6 space-y-4" onSubmit={handleCredentialsSubmit}>
@@ -88,7 +84,7 @@ export function LoginPage() {
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
                       placeholder="you@ogasela.com"
-                      className="w-full rounded-lg border border-black/10 py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition-colors focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                      className="w-full rounded-xl border border-black/10 bg-black/[0.015] py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition-colors focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-100"
                     />
                   </div>
                 </div>
@@ -107,7 +103,7 @@ export function LoginPage() {
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
                       placeholder="••••••••"
-                      className="w-full rounded-lg border border-black/10 py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition-colors focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                      className="w-full rounded-xl border border-black/10 bg-black/[0.015] py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition-colors focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-100"
                     />
                   </div>
                 </div>
@@ -117,7 +113,7 @@ export function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-500 py-2.5 text-sm font-semibold text-white shadow-[0_2px_4px_rgba(11,110,79,0.24)] transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-brand-500 to-brand-600 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(11,110,79,0.35)] transition-all hover:shadow-[0_6px_18px_rgba(11,110,79,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting ? <Spinner size={16} /> : "Continue"}
                 </button>
@@ -148,7 +144,7 @@ export function LoginPage() {
                       value={code}
                       onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
                       placeholder="123456"
-                      className="w-full rounded-lg border border-black/10 py-2.5 pl-9 pr-3 text-center text-lg font-semibold tracking-[0.3em] text-ink outline-none transition-colors focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                      className="w-full rounded-xl border border-black/10 bg-black/[0.015] py-2.5 pl-9 pr-3 text-center text-lg font-semibold tracking-[0.3em] text-ink outline-none transition-colors focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-100"
                     />
                   </div>
                 </div>
@@ -158,7 +154,7 @@ export function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting || code.length !== 6}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-500 py-2.5 text-sm font-semibold text-white shadow-[0_2px_4px_rgba(11,110,79,0.24)] transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-brand-500 to-brand-600 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(11,110,79,0.35)] transition-all hover:shadow-[0_6px_18px_rgba(11,110,79,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting ? <Spinner size={16} /> : "Verify and sign in"}
                 </button>
@@ -180,6 +176,6 @@ export function LoginPage() {
           Moderator, Finance Admin, and Super Admin accounts only.
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

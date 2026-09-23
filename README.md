@@ -1,6 +1,6 @@
 # OgaselaControlPortalUI
 
-The internal admin/operations portal for Ogasela ("Bira Control Portal") - moderation queue,
+The internal admin/operations portal for Ogasela ("Ogasela Control Portal") - moderation queue,
 biometric manual review, the platform KPI dashboard, the admin audit log, and NDPA data-subject
 erasure. Every screen here is a thin UI over `Ogasela.Api`'s `AdminController` (plus one action on
 `VerificationController`); there's no business logic here beyond what to show and which endpoint

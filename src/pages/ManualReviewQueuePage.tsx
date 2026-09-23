@@ -20,7 +20,7 @@ export function ManualReviewQueuePage() {
     setBusyId(verificationId);
     setActionError(null);
     try {
-      await decideManualReview(verificationId, decision, `${decision} via Bira Control Portal`);
+      await decideManualReview(verificationId, decision, `${decision} via Ogasela Control Portal`);
       refetch();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Could not apply that decision.");
