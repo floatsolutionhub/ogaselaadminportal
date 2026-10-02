@@ -35,3 +35,8 @@ export function revokeUserSessions(id: string): Promise<void> {
 export function reviewUserDocument(userId: string, documentId: string, approve: boolean, reason?: string): Promise<void> {
   return api.post<void>(`/admin/users/${userId}/documents/${documentId}/review`, { approve, reason: reason ?? null });
 }
+
+/** Verify a seller by hand (needs an approved ID card and a face photo), or revoke it with a reason the seller sees. */
+export function setSellerVerification(userId: string, verified: boolean, reason?: string): Promise<void> {
+  return api.post<void>(`/admin/users/${userId}/verification`, { verified, reason: reason ?? null });
+}

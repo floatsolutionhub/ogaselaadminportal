@@ -282,7 +282,7 @@ export type UserDocumentStatus = "PendingReview" | "Approved" | "Rejected";
 
 export interface AdminUserDocument {
   id: string;
-  type: "IdCard" | "UtilityBill";
+  type: "IdCard" | "UtilityBill" | "BusinessRegistration" | "OfficeUtilityBill";
   idType: "NationalIdCard" | "NinSlip" | "VotersCard" | "DriversLicence" | "InternationalPassport" | null;
   idNumber: string | null;
   fileName: string;
@@ -566,4 +566,37 @@ export interface UpdatePlatformSettings {
   requireListingApproval?: boolean;
   freePlanCap?: number;
   notifications?: { category: string; channel: NotificationChannel; enabled: boolean }[];
+}
+
+// Change requests - Ogasela.Api/Controllers/Admin/AdminProfileChangesController.cs
+
+export type ProfileChangeType = "Phone" | "Email" | "BusinessInfo";
+export type ProfileChangeStatus = "PendingReview" | "Approved" | "Rejected" | "Cancelled";
+
+/** current* fields are the user's details today, for an old-vs-new comparison. */
+export interface AdminProfileChange {
+  id: string;
+  userId: string;
+  userName: string | null;
+  userRole: AppUserRole;
+  type: ProfileChangeType;
+  currentPhone: string | null;
+  currentEmail: string | null;
+  currentBusinessName: string | null;
+  currentStoreAddress: string | null;
+  /** The new phone or email; null for business info. */
+  newValue: string | null;
+  businessName: string | null;
+  storeAddress: string | null;
+  status: ProfileChangeStatus;
+  reviewNote: string | null;
+  createdAt: string;
+  reviewedAt: string | null;
+}
+
+export interface AdminProfileChangePage {
+  items: AdminProfileChange[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
 }

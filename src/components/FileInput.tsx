@@ -1,5 +1,6 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { UploadCloud, X } from "lucide-react";
+import { compressForUpload, FileTooLargeError } from "../lib/compressFile";
 
 interface FileInputProps {
   label: string;
@@ -8,8 +9,29 @@ interface FileInputProps {
   accept?: string;
 }
 
+/** Every chosen file is compressed in the browser before it's handed to the form (see compressForUpload). */
 export function FileInput({ label, file, onChange, accept = "image/*,.pdf" }: FileInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [preparing, setPreparing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function choose(chosen: File | null) {
+    setError(null);
+    if (!chosen) {
+      onChange(null);
+      return;
+    }
+    setPreparing(true);
+    try {
+      onChange(await compressForUpload(chosen));
+    } catch (err) {
+      onChange(null);
+      if (inputRef.current) inputRef.current.value = "";
+      setError(err instanceof FileTooLargeError ? err.message : "Couldn't read that file. Try another.");
+    } finally {
+      setPreparing(false);
+    }
+  }
 
   return (
     <div>
@@ -19,7 +41,7 @@ export function FileInput({ label, file, onChange, accept = "image/*,.pdf" }: Fi
         type="file"
         accept={accept}
         className="hidden"
-        onChange={(event) => onChange(event.target.files?.[0] ?? null)}
+        onChange={(event) => void choose(event.target.files?.[0] ?? null)}
       />
 
       {file ? (
@@ -41,12 +63,14 @@ export function FileInput({ label, file, onChange, accept = "image/*,.pdf" }: Fi
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
+          disabled={preparing}
           className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-black/15 px-3 py-4 text-sm text-ink-muted transition-colors hover:border-brand-400 hover:text-brand-600"
         >
           <UploadCloud size={16} />
-          Choose file
+          {preparing ? "Preparing file..." : "Choose file"}
         </button>
       )}
+      {error && <p className="mt-1 text-xs text-rose-600">{error}</p>}
     </div>
   );
 }

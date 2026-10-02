@@ -14,6 +14,7 @@ import { AuditLogPage } from "./pages/AuditLogPage";
 import { DataErasurePage } from "./pages/DataErasurePage";
 import { StaffListPage } from "./pages/StaffListPage";
 import { UsersPage } from "./pages/UsersPage";
+import { ChangeRequestsPage } from "./pages/ChangeRequestsPage";
 import { AdsPage } from "./pages/AdsPage";
 import { AdDetailPage } from "./pages/AdDetailPage";
 import { DisputesPage } from "./pages/DisputesPage";
@@ -141,6 +142,14 @@ export default function App() {
               element={
                 <RequirePermission permission="users.view">
                   <UsersPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="/change-requests"
+              element={
+                <RequirePermission permission="users.changes.review">
+                  <ChangeRequestsPage />
                 </RequirePermission>
               }
             />
