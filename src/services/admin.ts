@@ -6,6 +6,7 @@ import type {
   ModerationQueueItem,
   ManualReviewQueueItem,
   PagedAuditLog,
+  PendingListing,
   PlatformDashboard,
   ReportDecision,
 } from "../types/api";
@@ -16,6 +17,19 @@ export function getModerationQueue(): Promise<ModerationQueueItem[]> {
 
 export function resolveReport(reportId: string, decision: ReportDecision, notes?: string): Promise<void> {
   return api.post<void>(`/admin/moderation/${reportId}/decision`, { decision, notes });
+}
+
+export function getPendingListings(): Promise<PendingListing[]> {
+  return api.get<PendingListing[]>("/admin/listings/pending");
+}
+
+export function approveListing(listingId: string): Promise<void> {
+  return api.post<void>(`/admin/listings/${listingId}/approve`);
+}
+
+/** Back to Draft with the reason shown to the seller; a paid plan charge is refunded to their wallet. */
+export function rejectListing(listingId: string, reason: string): Promise<void> {
+  return api.post<void>(`/admin/listings/${listingId}/reject`, { reason });
 }
 
 export function getManualReviewQueue(): Promise<ManualReviewQueueItem[]> {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, UserPlus } from "lucide-react";
-import { getStaffList } from "../services/staff";
+import { ShieldCheck, Users, UserPlus } from "lucide-react";
+import { getStaffList, getSuperAdmins } from "../services/staff";
 import { useApiQuery } from "../lib/useApiQuery";
 import { useAuth } from "../lib/auth";
 import { formatDateTime } from "../lib/format";
@@ -33,6 +33,7 @@ export function StaffListPage() {
     () => getStaffList(statusFilter || undefined),
     [statusFilter],
   );
+  const superAdmins = useApiQuery(getSuperAdmins, []);
 
   return (
     <div className="space-y-4">
@@ -50,6 +51,51 @@ export function StaffListPage() {
           </Link>
         )}
       </div>
+
+      <section className="space-y-2">
+        <div>
+          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+            <ShieldCheck size={15} className="text-brand-600" /> Super admins
+          </h3>
+          <p className="text-xs text-ink-muted">Seeded accounts with full access. They aren't onboarded, so they don't appear in the staff list.</p>
+        </div>
+
+        {superAdmins.isLoading ? (
+          <div className="flex h-24 items-center justify-center">
+            <Spinner />
+          </div>
+        ) : superAdmins.error ? (
+          <ErrorBanner message={superAdmins.error} />
+        ) : !superAdmins.data || superAdmins.data.length === 0 ? (
+          <EmptyState icon={ShieldCheck} title="No super admins" description="Seed one with scripts/seed-superadmin.sh in Ogasela.API." />
+        ) : (
+          <Card className="overflow-x-auto !p-0">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-black/5 bg-black/[0.02] text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                  <th className="px-5 py-3">Name</th>
+                  <th className="px-5 py-3">Email</th>
+                  <th className="px-5 py-3">Phone</th>
+                  <th className="px-5 py-3">Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {superAdmins.data.map((admin) => (
+                  <tr key={admin.id} className="border-b border-black/5 last:border-0">
+                    <td className="px-5 py-3">
+                      <span className="font-medium text-ink">{admin.name ?? "—"}</span>{" "}
+                      <Badge tone="brand">Super Admin</Badge>
+                    </td>
+                    <td className="px-5 py-3 text-ink-muted">{admin.email ?? "—"}</td>
+                    <td className="px-5 py-3 text-ink-muted">{admin.phone ?? "—"}</td>
+                    <td className="px-5 py-3 text-ink-muted">{formatDateTime(admin.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        )}
+      </section>
 
       <Card className="flex items-end gap-3">
         <div className="w-56">

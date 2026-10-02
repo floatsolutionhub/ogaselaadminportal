@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from "react";
-import { KeyRound, Lock } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { useAuth } from "../lib/auth";
 import { ApiError } from "../lib/apiClient";
 import { changePassword } from "../services/auth";
 import { AuthShell } from "../components/AuthShell";
 import { Card } from "../components/Card";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { PasswordInput } from "../components/PasswordInput";
 import { Spinner } from "../components/Spinner";
 
 export function ChangePasswordPage() {
@@ -56,56 +57,41 @@ export function ChangePasswordPage() {
             <label htmlFor="currentPassword" className="mb-1.5 block text-sm font-medium text-ink">
               {user?.mustChangePassword ? "Temporary password" : "Current password"}
             </label>
-            <div className="relative">
-              <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-              <input
-                id="currentPassword"
-                type="password"
-                required
-                autoComplete="current-password"
-                value={currentPassword}
-                onChange={(event) => setCurrentPassword(event.target.value)}
-                className="w-full rounded-xl border border-black/10 bg-black/[0.015] py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition-colors focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-100"
-              />
-            </div>
+            <PasswordInput
+              id="currentPassword"
+              required
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+            />
           </div>
 
           <div>
             <label htmlFor="newPassword" className="mb-1.5 block text-sm font-medium text-ink">
               New password
             </label>
-            <div className="relative">
-              <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-              <input
-                id="newPassword"
-                type="password"
-                required
-                minLength={8}
-                autoComplete="new-password"
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                className="w-full rounded-xl border border-black/10 bg-black/[0.015] py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition-colors focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-100"
-              />
-            </div>
+            <PasswordInput
+              id="newPassword"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+            />
           </div>
 
           <div>
             <label htmlFor="confirmPassword" className="mb-1.5 block text-sm font-medium text-ink">
               Confirm new password
             </label>
-            <div className="relative">
-              <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-              <input
-                id="confirmPassword"
-                type="password"
-                required
-                minLength={8}
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                className="w-full rounded-xl border border-black/10 bg-black/[0.015] py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition-colors focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-100"
-              />
-            </div>
+            <PasswordInput
+              id="confirmPassword"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+            />
           </div>
 
           {error && <ErrorBanner message={error} />}

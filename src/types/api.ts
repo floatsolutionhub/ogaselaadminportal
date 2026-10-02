@@ -182,6 +182,14 @@ export interface StaffListItem {
   createdAt: string;
 }
 
+export interface SuperAdmin {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  createdAt: string;
+}
+
 export interface StaffDetail extends StaffListItem {
   rejectionReason: string | null;
   decidedAt: string | null;
@@ -202,4 +210,360 @@ export interface NigeriaCity {
   stateId: string;
   name: string;
   createdAt: string;
+}
+
+// Ogasela.Application/Promotions/GetCategories/CategoryResponse.cs - flat list; a subcategory has parentCategoryId set.
+export interface Category {
+  id: string;
+  name: string;
+  parentCategoryId: string | null;
+  isFreeEligible: boolean;
+  attributeSchemaVersion: number;
+  imageUrl: string | null;
+}
+
+// Ogasela.Application/Moderation/ListingReview/GetPendingListingsQuery.cs - an ad waiting for approval.
+export interface PendingListing {
+  id: string;
+  title: string;
+  description: string;
+  /** Naira (not kobo), as the seller entered it. */
+  price: number | null;
+  condition: string;
+  mediaUrls: string[];
+  location: string | null;
+  categoryName: string | null;
+  promotionPlanName: string | null;
+  sellerProfileId: string;
+  sellerBusinessName: string;
+  sellerVerificationStatus: string;
+  /** Highest open fraud-risk score (0-1) raised for this ad, if any. */
+  fraudScore: number | null;
+  submittedAt: string;
+}
+
+// Ogasela.Application/Marketing/Announcements/AnnouncementResponse.cs - the app's home-screen pop-up.
+export interface Announcement {
+  id: string;
+  title: string;
+  caption: string;
+  /** Short-lived signed URL to the image. */
+  image: string;
+  cta: { label: string; url: string } | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+// Ogasela.Application/Admin/Users - app users (Buyers/Sellers) for the Users page.
+export type AppUserRole = "Buyer" | "Seller";
+export type AppUserStatusFilter = "All" | "Active" | "Suspended";
+
+export interface AdminUserListItem {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  role: AppUserRole;
+  businessName: string | null;
+  verificationStatus: string | null;
+  liveAdCount: number;
+  isSuspended: boolean;
+  createdAt: string;
+}
+
+export interface AdminUserPage {
+  items: AdminUserListItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+export type UserDocumentStatus = "PendingReview" | "Approved" | "Rejected";
+
+export interface AdminUserDocument {
+  id: string;
+  type: "IdCard" | "UtilityBill";
+  idType: "NationalIdCard" | "NinSlip" | "VotersCard" | "DriversLicence" | "InternationalPassport" | null;
+  idNumber: string | null;
+  fileName: string;
+  contentType: string;
+  /** Short-lived signed URL. */
+  fileUrl: string;
+  status: UserDocumentStatus;
+  reviewNote: string | null;
+  createdAt: string;
+}
+
+export interface AdminUserDetail {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  role: AppUserRole;
+  profilePhotoUrl: string | null;
+  createdAt: string;
+  isSuspended: boolean;
+  suspendedAt: string | null;
+  suspensionReason: string | null;
+  socialLogins: string[];
+  seller: {
+    sellerProfileId: string;
+    businessName: string;
+    storeAddress: string | null;
+    verificationStatus: string;
+    verifiedAt: string | null;
+  } | null;
+  stats: {
+    totalAds: number;
+    liveAds: number;
+    pendingAds: number;
+    reviewCount: number;
+    averageRating: number;
+    openReportsAgainst: number;
+    conversations: number;
+    activeSessions: number;
+  };
+  documents: AdminUserDocument[];
+  recentListings: {
+    id: string;
+    title: string;
+    price: number | null;
+    status: string;
+    thumbnailUrl: string | null;
+    createdAt: string;
+  }[];
+}
+
+// Ogasela.Application/Admin/Listings - the All Ads page.
+export type ListingStatus = "Draft" | "PendingReview" | "Active" | "ExpiringSoon" | "Expired" | "Paused" | "Sold";
+/** Plan names are free text - SuperAdmins add and rename plans in Settings → Pricing. */
+export type PlanName = string;
+
+export interface AdminListingListItem {
+  id: string;
+  title: string;
+  /** Naira. */
+  price: number | null;
+  status: ListingStatus;
+  thumbnailUrl: string | null;
+  categoryName: string | null;
+  planName: PlanName | null;
+  sellerUserId: string;
+  sellerBusinessName: string;
+  location: string | null;
+  openReports: number;
+  createdAt: string;
+  expiresAt: string | null;
+}
+
+export interface AdminListingPage {
+  items: AdminListingListItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+export interface AdminListingDetail {
+  id: string;
+  title: string;
+  description: string;
+  price: number | null;
+  condition: "New" | "Used";
+  status: ListingStatus;
+  mediaUrls: string[];
+  location: string | null;
+  categoryId: string;
+  categoryName: string | null;
+  parentCategoryName: string | null;
+  planName: PlanName | null;
+  /** Rejection or takedown reason shown to the seller. */
+  reviewNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+  expiresAt: string | null;
+  seller: {
+    userId: string;
+    sellerProfileId: string;
+    businessName: string;
+    name: string | null;
+    phone: string | null;
+    verificationStatus: string;
+    isSuspended: boolean;
+  };
+  stats: { impressions: number; views: number; callClicks: number; messageStarts: number; saves: number };
+  reports: { id: string; reason: string; status: string; fraudScore: number | null; systemGenerated: boolean; createdAt: string }[];
+  campaigns: { platform: string; status: string; impressions: number; clicks: number; spendKobo: number }[];
+  history: { action: string; at: string; details: string | null }[];
+}
+
+// ---- Disputes & Resolutions (AdminDisputesController) ----
+
+export type DisputeReason = "ItemNotAsDescribed" | "NotDelivered" | "PaidNoResponse" | "FakeOrCounterfeit" | "BuyerDidNotPay" | "Other";
+export type DisputeStatus = "Open" | "InReview" | "Resolved";
+export type DisputeOutcome = "InFavourOfRaiser" | "InFavourOfRespondent" | "MutualAgreement" | "Dismissed";
+export type DisputeAuthorRole = "Raiser" | "Respondent" | "Staff";
+
+export interface AdminDisputeListItem {
+  id: string;
+  reference: string;
+  listingTitle: string;
+  raisedByName: string;
+  againstName: string;
+  reason: DisputeReason;
+  status: DisputeStatus;
+  assignedToName: string | null;
+  messageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminDisputePage {
+  items: AdminDisputeListItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+export interface AdminDisputeParty {
+  userId: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  isSeller: boolean;
+  isSuspended: boolean;
+  businessName: string | null;
+}
+
+export interface DisputeEvidence {
+  url: string;
+  isPdf: boolean;
+}
+
+export interface AdminDisputeThreadMessage {
+  id: string;
+  authorRole: DisputeAuthorRole;
+  authorName: string;
+  body: string;
+  attachment: DisputeEvidence | null;
+  createdAt: string;
+}
+
+export interface AdminDisputeChatMessage {
+  role: "Buyer" | "Seller";
+  content: string;
+  imageUrl: string | null;
+  sentAt: string;
+}
+
+export interface AdminDisputeDetail {
+  id: string;
+  reference: string;
+  reason: DisputeReason;
+  description: string;
+  status: DisputeStatus;
+  outcome: DisputeOutcome | null;
+  resolutionNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+  assignedToUserId: string | null;
+  assignedToName: string | null;
+  raisedBy: AdminDisputeParty;
+  against: AdminDisputeParty;
+  listing: { id: string; title: string; price: number | null; status: ListingStatus; thumbnailUrl: string | null };
+  evidence: DisputeEvidence[];
+  messages: AdminDisputeThreadMessage[];
+  chat: AdminDisputeChatMessage[];
+}
+
+// ---- Revenue (AdminRevenueController) - every amount is in kobo ----
+
+export type TransactionType = "PlanPurchase" | "AdSpendTopUp" | "Refund";
+export type TransactionStatus = "Pending" | "Success" | "Failed" | "Refunded";
+
+export interface RevenueSummary {
+  from: string;
+  to: string;
+  bucket: "day" | "month";
+  revenueKobo: number;
+  planPurchases: number;
+  previousRevenueKobo: number;
+  topUpsKobo: number;
+  topUps: number;
+  pendingTopUps: number;
+  failedTopUps: number;
+  refundsKobo: number;
+  refunds: number;
+  payingSellers: number;
+  walletBalancesKobo: number;
+  allTimeRevenueKobo: number;
+  series: { date: string; revenueKobo: number; topUpsKobo: number }[];
+  byPlan: { planName: string; revenueKobo: number; count: number }[];
+  topSellers: { userId: string; businessName: string; revenueKobo: number; count: number }[];
+}
+
+export interface RevenueTransaction {
+  id: string;
+  type: TransactionType;
+  status: TransactionStatus;
+  amountKobo: number;
+  gatewayReference: string | null;
+  sellerUserId: string;
+  businessName: string;
+  listingId: string | null;
+  listingTitle: string | null;
+  planName: string | null;
+  createdAt: string;
+}
+
+export interface RevenueTransactionPage {
+  items: RevenueTransaction[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+// ---- Settings (PromotionPlansController, AdminSettingsController) ----
+
+export type AiToolTier = "Basic" | "Standard" | "Full";
+
+export interface PromotionPlan {
+  id: string;
+  name: string;
+  description: string | null;
+  features: string[];
+  durationDays: number;
+  photoLimit: number;
+  videoAllowed: boolean;
+  /** 0-10 - how strongly the plan lifts ads in search and Hot Picks. */
+  boostWeight: number;
+  /** Kobo. */
+  price: number;
+  aiToolTier: AiToolTier;
+  adPlatformPushAllowed: boolean;
+  bundledAdCreditKobo: number;
+  isActive: boolean;
+}
+
+export type PromotionPlanInput = Omit<PromotionPlan, "id">;
+
+export type NotificationChannel = "Push" | "Sms" | "Email" | "WhatsApp";
+
+export interface PlatformSettings {
+  requireListingApproval: boolean;
+  freePlanCap: number;
+  notifications: {
+    category: string;
+    label: string;
+    description: string;
+    channels: { channel: NotificationChannel; enabled: boolean }[];
+  }[];
+  updatedAt: string | null;
+}
+
+export interface UpdatePlatformSettings {
+  requireListingApproval?: boolean;
+  freePlanCap?: number;
+  notifications?: { category: string; channel: NotificationChannel; enabled: boolean }[];
 }

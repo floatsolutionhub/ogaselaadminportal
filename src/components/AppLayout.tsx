@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
+import { IdleLogoutWarning } from "./IdleLogoutWarning";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
@@ -36,6 +37,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <IdleLogoutWarning />
     </div>
   );
 }

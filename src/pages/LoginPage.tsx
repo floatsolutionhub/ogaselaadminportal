@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { Navigate } from "react-router-dom";
-import { ArrowLeft, KeyRound, Lock, Mail } from "lucide-react";
-import { useAuth } from "../lib/auth";
+import { Link, Navigate } from "react-router-dom";
+import { ArrowLeft, KeyRound, Mail } from "lucide-react";
+import { takeLogoutReason, useAuth } from "../lib/auth";
 import { ApiError } from "../lib/apiClient";
 import { AuthShell } from "../components/AuthShell";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { PasswordInput } from "../components/PasswordInput";
 import { Spinner } from "../components/Spinner";
 
 type Step = { name: "credentials" } | { name: "otp"; maskedEmail: string; maskedPhone: string };
@@ -17,6 +18,8 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Why the admin landed here, e.g. the inactivity logout - read once.
+  const [signedOutReason] = useState(takeLogoutReason);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isLoading && user) {
@@ -90,25 +93,32 @@ export function LoginPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-ink">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-                    <input
-                      id="password"
-                      type="password"
-                      required
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="••••••••"
-                      className="w-full rounded-xl border border-black/10 bg-black/[0.015] py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition-colors focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-100"
-                    />
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <label htmlFor="password" className="block text-sm font-medium text-ink">
+                      Password
+                    </label>
+                    <Link
+                      to="/forgot-password"
+                      state={{ email: email.trim() }}
+                      className="text-xs font-medium text-brand-600 hover:text-brand-700"
+                    >
+                      Forgot password?
+                    </Link>
                   </div>
+                  <PasswordInput
+                    id="password"
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="••••••••"
+                  />
                 </div>
 
                 {error && <ErrorBanner message={error} />}
+                {!error && signedOutReason && (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">{signedOutReason}</p>
+                )}
 
                 <button
                   type="submit"

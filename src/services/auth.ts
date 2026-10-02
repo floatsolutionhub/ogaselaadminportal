@@ -24,3 +24,14 @@ export function getCurrentUser(): Promise<CurrentUser> {
 export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
   return api.post<void>("/auth/change-password", { currentPassword, newPassword });
 }
+
+// Forgot-password flow. request always succeeds (the API won't reveal whether the email is a
+// staff account); confirm verifies the code sent to the account's email + phone and signs the
+// account out of every existing session.
+export function requestAdminPasswordReset(email: string): Promise<void> {
+  return api.post<void>("/auth/admin/password-reset/request", { email });
+}
+
+export function confirmAdminPasswordReset(email: string, code: string, newPassword: string): Promise<void> {
+  return api.post<void>("/auth/admin/password-reset/confirm", { email, code, newPassword });
+}

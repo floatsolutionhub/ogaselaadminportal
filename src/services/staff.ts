@@ -1,6 +1,6 @@
 // Ogasela.Api/Controllers/Staff/StaffController.cs - one function per route, in the same order they're declared there.
 import { api } from "../lib/apiClient";
-import type { StaffDetail, StaffKycDocument, StaffKycDocumentType, StaffListItem, StaffOnboardingStatus } from "../types/api";
+import type { StaffDetail, StaffKycDocument, StaffKycDocumentType, StaffListItem, StaffOnboardingStatus, SuperAdmin } from "../types/api";
 
 export interface CreateStaffInput {
   name: string;
@@ -18,6 +18,10 @@ export function createStaff(input: CreateStaffInput): Promise<StaffDetail> {
 export function getStaffList(status?: StaffOnboardingStatus): Promise<StaffListItem[]> {
   const params = status ? `?status=${status}` : "";
   return api.get<StaffListItem[]>(`/staff${params}`);
+}
+
+export function getSuperAdmins(): Promise<SuperAdmin[]> {
+  return api.get<SuperAdmin[]>("/staff/super-admins");
 }
 
 export function getStaffDetail(id: string): Promise<StaffDetail> {
