@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { Plus, Shapes, X } from "lucide-react";
+import { Pencil, Plus, Shapes, X } from "lucide-react";
 import { useApiQuery } from "../lib/useApiQuery";
 import { ApiError } from "../lib/apiClient";
-import { createCategory, createSubcategory, getCategories } from "../services/categories";
+import { createCategory, createSubcategory, getCategories, updateCategory } from "../services/categories";
 import type { Category } from "../types/api";
 import { Card } from "../components/Card";
 import { Badge } from "../components/Badge";
@@ -219,10 +219,122 @@ function AddSubcategoryModal({
   );
 }
 
+function EditCategoryModal({
+  category,
+  onClose,
+  onSaved,
+}: {
+  category: Category | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [isFreeEligible, setIsFreeEligible] = useState(true);
+  const [image, setImage] = useState<File | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loadedId, setLoadedId] = useState<string | null>(null);
+
+  // Start from the chosen category's current values each time a different one is opened.
+  if (category && category.id !== loadedId) {
+    setLoadedId(category.id);
+    setName(category.name);
+    setIsFreeEligible(category.isFreeEligible);
+    setImage(null);
+    setFormError(null);
+  }
+
+  const isSubcategory = !!category?.parentCategoryId;
+  const trimmed = name.trim();
+  const changed =
+    !!category && (trimmed !== category.name || image !== null || (!isSubcategory && isFreeEligible !== category.isFreeEligible));
+  const canSave = trimmed.length > 0 && changed && !isSaving;
+
+  function close() {
+    setLoadedId(null);
+    onClose();
+  }
+
+  async function save() {
+    if (!category || !canSave) return;
+    setIsSaving(true);
+    setFormError(null);
+    try {
+      await updateCategory(category, { name: trimmed, isFreeEligible, image });
+      setLoadedId(null);
+      onSaved();
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "Could not save your changes.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <Modal open={!!category} onClose={close} title={isSubcategory ? "Edit subcategory" : "Edit category"}>
+      <div className="space-y-4">
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-ink">{isSubcategory ? "Subcategory name" : "Category name"}</label>
+          <input value={name} onChange={(event) => setName(event.target.value)} className={inputClassName} />
+        </div>
+
+        {category?.imageUrl && !image && (
+          <div className="flex items-center gap-3">
+            <img src={category.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover" />
+            <p className="text-xs text-ink-muted">Current image - choose a new one below to replace it.</p>
+          </div>
+        )}
+        <FileInput label={category?.imageUrl ? "New image (optional)" : "Image (optional)"} file={image} onChange={setImage} accept="image/*" />
+
+        {isSubcategory ? (
+          <p className="text-xs text-ink-muted">
+            Free plan: {category?.isFreeEligible ? "allowed" : "not allowed"} - set on its parent category.
+          </p>
+        ) : (
+          <div>
+            <label className="flex items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={isFreeEligible}
+                onChange={(event) => setIsFreeEligible(event.target.checked)}
+                className="h-4 w-4 accent-brand-500"
+              />
+              Sellers can post here on the Free plan
+            </label>
+            <p className="mt-1 text-xs text-ink-muted">Applies to all of its subcategories too. Ads already live aren't affected.</p>
+          </div>
+        )}
+
+        {formError && <ErrorBanner message={formError} />}
+
+        <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={close}
+            className="rounded-lg border border-black/10 px-4 py-2 text-sm font-medium text-ink-muted hover:bg-black/5"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={save}
+            disabled={!canSave}
+            className="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-60"
+          >
+            {isSaving && <Spinner size={14} />}
+            Save changes
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export function CategoriesPage() {
   const { data, isLoading, error, refetch } = useApiQuery(() => getCategories());
   const [isCreating, setIsCreating] = useState(false);
   const [addingTo, setAddingTo] = useState<Category | null>(null);
+  const [editing, setEditing] = useState<Category | null>(null);
 
   const tree = useMemo<CategoryWithChildren[]>(() => {
     const all = data ?? [];
@@ -240,7 +352,8 @@ export function CategoriesPage() {
         <div>
           <h2 className="text-sm font-semibold text-ink">Categories</h2>
           <p className="text-xs text-ink-muted">
-            What sellers can post under. Every category has subcategories, and ads are posted to a subcategory.
+            What sellers can post under. Every category has subcategories, and ads are posted to a subcategory. Click
+            a subcategory to edit it.
           </p>
         </div>
         <button
@@ -279,14 +392,29 @@ export function CategoriesPage() {
                   </p>
                 </div>
                 {category.isFreeEligible ? <Badge tone="success">Free plan</Badge> : <Badge>Paid only</Badge>}
+                <button
+                  type="button"
+                  onClick={() => setEditing(category)}
+                  aria-label={`Edit ${category.name}`}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-black/10 px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5"
+                >
+                  <Pencil size={12} /> Edit
+                </button>
               </div>
 
               {category.children.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
                   {category.children.map((child) => (
-                    <span key={child.id} className="rounded-full bg-black/5 px-2.5 py-1 text-xs font-medium text-ink">
+                    <button
+                      key={child.id}
+                      type="button"
+                      onClick={() => setEditing(child)}
+                      title={`Edit ${child.name}`}
+                      className="group inline-flex items-center gap-1 rounded-full bg-black/5 px-2.5 py-1 text-xs font-medium text-ink hover:bg-brand-50 hover:text-brand-700"
+                    >
                       {child.name}
-                    </span>
+                      <Pencil size={10} className="text-ink-muted group-hover:text-brand-600" />
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -310,6 +438,14 @@ export function CategoriesPage() {
         onClose={() => setIsCreating(false)}
         onCreated={() => {
           setIsCreating(false);
+          refetch();
+        }}
+      />
+      <EditCategoryModal
+        category={editing}
+        onClose={() => setEditing(null)}
+        onSaved={() => {
+          setEditing(null);
           refetch();
         }}
       />

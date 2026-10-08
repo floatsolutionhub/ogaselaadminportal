@@ -69,4 +69,5 @@ export const api = {
   del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
   /** For file uploads (multipart/form-data) - pass a FormData body, e.g. staff KYC documents. */
   postForm: <T>(path: string, formData: FormData) => request<T>(path, { method: "POST", body: formData }),
+  putForm: <T>(path: string, formData: FormData) => request<T>(path, { method: "PUT", body: formData }),
 };
