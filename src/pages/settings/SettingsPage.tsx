@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Bell, ChevronRight, ShieldCheck, Tags, type LucideIcon } from "lucide-react";
+import { Bell, ChevronRight, MessageSquareWarning, ShieldCheck, Tags, type LucideIcon } from "lucide-react";
 import { useApiQuery } from "../../lib/useApiQuery";
 import { formatKobo } from "../../lib/format";
 import { getPlatformSettings, getPromotionPlans } from "../../services/settings";
@@ -97,6 +97,15 @@ export function SettingsPage() {
             {channelsOn} of {channels.length} switched on
           </p>
           <p className="text-xs text-ink-muted">{settings.data.notifications.map((c) => c.label).join(" · ")}</p>
+        </SettingCard>
+
+        <SettingCard
+          to="/settings/chat-safety"
+          icon={MessageSquareWarning}
+          title="Chat safety notice"
+          description="The caption buyers and sellers see above the message box in every chat."
+        >
+          <p className="line-clamp-2 text-xs text-ink">&ldquo;{settings.data.messagingSafetyNotice}&rdquo;</p>
         </SettingCard>
       </div>
     </div>

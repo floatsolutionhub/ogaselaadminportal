@@ -312,6 +312,8 @@ export interface AdminUserDetail {
     storeAddress: string | null;
     verificationStatus: string;
     verifiedAt: string | null;
+    /** Null unless staff verified the business. */
+    businessVerifiedAt: string | null;
   } | null;
   stats: {
     totalAds: number;
@@ -560,11 +562,14 @@ export interface PlatformSettings {
     channels: { channel: NotificationChannel; enabled: boolean }[];
   }[];
   updatedAt: string | null;
+  /** Caption shown above the message box in every chat. */
+  messagingSafetyNotice: string;
 }
 
 export interface UpdatePlatformSettings {
   requireListingApproval?: boolean;
   freePlanCap?: number;
+  messagingSafetyNotice?: string;
   notifications?: { category: string; channel: NotificationChannel; enabled: boolean }[];
 }
 

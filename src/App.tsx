@@ -23,6 +23,7 @@ import { SettingsPage } from "./pages/settings/SettingsPage";
 import { PricingSettingsPage } from "./pages/settings/PricingSettingsPage";
 import { ApprovalsSettingsPage } from "./pages/settings/ApprovalsSettingsPage";
 import { NotificationsSettingsPage } from "./pages/settings/NotificationsSettingsPage";
+import { ChatSafetySettingsPage } from "./pages/settings/ChatSafetySettingsPage";
 import { DisputeDetailPage } from "./pages/DisputeDetailPage";
 import { UserDetailPage } from "./pages/UserDetailPage";
 import { StaffOnboardPage } from "./pages/StaffOnboardPage";
@@ -110,6 +111,14 @@ export default function App() {
               element={
                 <RequirePermission requireSuperAdmin>
                   <NotificationsSettingsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="/settings/chat-safety"
+              element={
+                <RequirePermission requireSuperAdmin>
+                  <ChatSafetySettingsPage />
                 </RequirePermission>
               }
             />

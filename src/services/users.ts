@@ -36,7 +36,18 @@ export function reviewUserDocument(userId: string, documentId: string, approve: 
   return api.post<void>(`/admin/users/${userId}/documents/${documentId}/review`, { approve, reason: reason ?? null });
 }
 
-/** Verify a seller by hand (needs an approved ID card and a face photo), or revoke it with a reason the seller sees. */
+/**
+ * Verify a person by hand (needs a face photo, an approved ID card and an approved utility bill), or revoke it with a
+ * reason they see. Verifying a buyer turns them into a seller.
+ */
 export function setSellerVerification(userId: string, verified: boolean, reason?: string): Promise<void> {
   return api.post<void>(`/admin/users/${userId}/verification`, { verified, reason: reason ?? null });
+}
+
+/**
+ * Verify a seller's business (person verified + approved registration and proof of office address) - a trust badge
+ * on their shop and ads - or revoke it with a reason they see.
+ */
+export function setBusinessVerification(userId: string, verified: boolean, reason?: string): Promise<void> {
+  return api.post<void>(`/admin/users/${userId}/business-verification`, { verified, reason: reason ?? null });
 }

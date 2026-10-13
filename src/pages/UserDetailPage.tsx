@@ -21,7 +21,15 @@ import { useApiQuery } from "../lib/useApiQuery";
 import { useAuth } from "../lib/auth";
 import { formatDateTime, formatRelativeAge } from "../lib/format";
 import { eraseUserData } from "../services/admin";
-import { getUser, reactivateUser, revokeUserSessions, reviewUserDocument, setSellerVerification, suspendUser } from "../services/users";
+import {
+  getUser,
+  reactivateUser,
+  revokeUserSessions,
+  reviewUserDocument,
+  setBusinessVerification,
+  setSellerVerification,
+  suspendUser,
+} from "../services/users";
 import type { AdminUserDocument } from "../types/api";
 import { Card } from "../components/Card";
 import { Badge } from "../components/Badge";
@@ -86,8 +94,9 @@ export function UserDetailPage() {
   const [eraseText, setEraseText] = useState("");
   const [rejecting, setRejecting] = useState<AdminUserDocument | null>(null);
   const [rejectReason, setRejectReason] = useState("");
-  const [confirmVerify, setConfirmVerify] = useState(false);
-  const [revoking, setRevoking] = useState(false);
+  // Which verification track a confirm/revoke modal is acting on: the person, or their business.
+  const [confirmVerify, setConfirmVerify] = useState<VerificationTrack | null>(null);
+  const [revoking, setRevoking] = useState<VerificationTrack | null>(null);
   const [revokeReason, setRevokeReason] = useState("");
 
   const canManage = hasPermission("users.manage");
@@ -123,6 +132,11 @@ export function UserDetailPage() {
   if (error || !user) {
     return <ErrorBanner message={error ?? "This user could not be found."} />;
   }
+
+  const hasApproved = (type: AdminUserDocument["type"]) =>
+    user.documents.some((d) => d.type === type && d.status === "Approved");
+  const verifyCopy = confirmVerify ? VERIFY_COPY[confirmVerify] : VERIFY_COPY.personal;
+  const revokeCopy = revoking ? REVOKE_COPY[revoking] : REVOKE_COPY.personal;
 
   const initials = (user.name ?? user.email ?? "?")
     .split(/\s+/)
@@ -262,22 +276,55 @@ export function UserDetailPage() {
               </dd>
             </dl>
           ) : null}
-          {user.seller && canVerify ? (
+          {user.seller?.businessVerifiedAt ? (
+            <p className="flex items-center gap-1 text-sm text-ink">
+              <BadgeCheck size={14} className="text-brand-600" /> Business verified
+              <span className="text-ink-muted">· {formatDateTime(user.seller.businessVerifiedAt)}</span>
+            </p>
+          ) : null}
+          {user.seller ? null : (
+            <p className="text-sm text-ink-muted">
+              This is a buyer account - no seller profile yet. Verifying them makes them a seller.
+            </p>
+          )}
+          {canVerify ? (
             <VerificationPanel
-              verified={user.seller.verificationStatus === "Verified"}
-              hasFacePhoto={!!user.profilePhotoUrl}
-              hasApprovedId={user.documents.some((d) => d.type === "IdCard" && d.status === "Approved")}
+              title="Personal verification"
+              verified={user.seller?.verificationStatus === "Verified"}
+              checks={[
+                { ok: !!user.profilePhotoUrl, label: "Face photo taken" },
+                { ok: hasApproved("IdCard"), label: "ID card approved" },
+                { ok: hasApproved("UtilityBill"), label: "Utility bill approved" },
+              ]}
+              readyHint="Compare the face photo with the ID before verifying."
+              verifyLabel={user.seller ? "Verify seller" : "Verify & make seller"}
               busy={busy !== null}
-              onVerify={() => setConfirmVerify(true)}
+              onVerify={() => setConfirmVerify("personal")}
               onRevoke={() => {
                 setRevokeReason("");
-                setRevoking(true);
+                setRevoking("personal");
               }}
             />
           ) : null}
-          {user.seller ? null : (
-            <p className="text-sm text-ink-muted">This is a buyer account - no seller profile.</p>
-          )}
+          {canVerify && user.seller ? (
+            <VerificationPanel
+              title="Business verification"
+              verified={!!user.seller.businessVerifiedAt}
+              checks={[
+                { ok: user.seller.verificationStatus === "Verified", label: "Person verified" },
+                { ok: hasApproved("BusinessRegistration"), label: "Business registration approved" },
+                { ok: hasApproved("OfficeUtilityBill"), label: "Proof of office address approved" },
+              ]}
+              readyHint="Check the registration matches the business name before verifying."
+              verifyLabel="Verify business"
+              busy={busy !== null}
+              onVerify={() => setConfirmVerify("business")}
+              onRevoke={() => {
+                setRevokeReason("");
+                setRevoking("business");
+              }}
+            />
+          ) : null}
         </Card>
 
         {/* Documents */}
@@ -558,15 +605,15 @@ export function UserDetailPage() {
 
       {/* Verify seller */}
       <Modal
-        open={confirmVerify}
-        onClose={() => setConfirmVerify(false)}
-        title="Verify this seller?"
-        description="Only verify after comparing their face photo with their approved ID card. Verified sellers can publish ads, and they'll be notified."
+        open={confirmVerify !== null}
+        onClose={() => setConfirmVerify(null)}
+        title={verifyCopy.title}
+        description={user.seller || confirmVerify !== "personal" ? verifyCopy.description : `${verifyCopy.description} This buyer becomes a seller.`}
       >
         <div className="flex justify-end gap-3">
           <button
             type="button"
-            onClick={() => setConfirmVerify(false)}
+            onClick={() => setConfirmVerify(null)}
             className="rounded-lg border border-black/10 px-4 py-2 text-sm font-medium text-ink-muted hover:bg-black/5"
           >
             Cancel
@@ -575,27 +622,28 @@ export function UserDetailPage() {
             type="button"
             disabled={busy !== null}
             onClick={async () => {
+              const business = confirmVerify === "business";
               const ok = await run(
                 "verify",
-                () => setSellerVerification(user.id, true),
-                "Seller verified - they've been notified and can now publish ads.",
-                "Could not verify this seller.",
+                () => (business ? setBusinessVerification(user.id, true) : setSellerVerification(user.id, true)),
+                verifyCopy.success,
+                verifyCopy.failure,
               );
-              if (ok) setConfirmVerify(false);
+              if (ok) setConfirmVerify(null);
             }}
             className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
           >
-            <BadgeCheck size={15} /> Verify seller
+            <BadgeCheck size={15} /> {verifyCopy.action}
           </button>
         </div>
       </Modal>
 
       {/* Revoke verification */}
       <Modal
-        open={revoking}
-        onClose={() => setRevoking(false)}
-        title="Revoke verification"
-        description="They won't be able to publish new ads until verified again. Their live ads stay up. They'll see your reason."
+        open={revoking !== null}
+        onClose={() => setRevoking(null)}
+        title={revokeCopy.title}
+        description={revokeCopy.description}
       >
         <div className="space-y-4">
           <textarea
@@ -609,7 +657,7 @@ export function UserDetailPage() {
           <div className="flex justify-end gap-3">
             <button
               type="button"
-              onClick={() => setRevoking(false)}
+              onClick={() => setRevoking(null)}
               className="rounded-lg border border-black/10 px-4 py-2 text-sm font-medium text-ink-muted hover:bg-black/5"
             >
               Cancel
@@ -618,17 +666,22 @@ export function UserDetailPage() {
               type="button"
               disabled={!revokeReason.trim() || busy !== null}
               onClick={async () => {
+                const reason = revokeReason.trim();
+                const business = revoking === "business";
                 const ok = await run(
                   "revoke",
-                  () => setSellerVerification(user.id, false, revokeReason.trim()),
-                  "Verification revoked - the seller has been notified.",
+                  () =>
+                    business
+                      ? setBusinessVerification(user.id, false, reason)
+                      : setSellerVerification(user.id, false, reason),
+                  revokeCopy.success,
                   "Could not revoke verification.",
                 );
-                if (ok) setRevoking(false);
+                if (ok) setRevoking(null);
               }}
               className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
             >
-              Revoke verification
+              {revokeCopy.title}
             </button>
           </div>
         </div>
@@ -637,60 +690,102 @@ export function UserDetailPage() {
   );
 }
 
-/** What staff check before verifying a seller by hand, and the verify/revoke action. */
+type VerificationTrack = "personal" | "business";
+
+const VERIFY_COPY: Record<
+  VerificationTrack,
+  { title: string; description: string; action: string; success: string; failure: string }
+> = {
+  personal: {
+    title: "Verify this person?",
+    description:
+      "Only verify after comparing their face photo with their approved ID card. Verified sellers can publish ads, and they'll be notified.",
+    action: "Verify",
+    success: "Verified - they've been notified and can now publish ads.",
+    failure: "Could not verify this person.",
+  },
+  business: {
+    title: "Verify this business?",
+    description:
+      "Only verify after checking the registration document matches the business name and the proof of address is recent. Their shop and ads get a verified business badge, and they'll be notified.",
+    action: "Verify business",
+    success: "Business verified - they've been notified.",
+    failure: "Could not verify this business.",
+  },
+};
+
+const REVOKE_COPY: Record<VerificationTrack, { title: string; description: string; success: string }> = {
+  personal: {
+    title: "Revoke verification",
+    description:
+      "They won't be able to publish new ads until verified again, and their business verification is removed too. Their live ads stay up. They'll see your reason.",
+    success: "Verification revoked - the seller has been notified.",
+  },
+  business: {
+    title: "Revoke business verification",
+    description: "Their verified business badge is removed; they can still sell. They'll see your reason.",
+    success: "Business verification revoked - the seller has been notified.",
+  },
+};
+
+/** One verification track: what staff check before verifying by hand, and the verify/revoke action. */
 function VerificationPanel({
+  title,
   verified,
-  hasFacePhoto,
-  hasApprovedId,
+  checks,
+  readyHint,
+  verifyLabel,
   busy,
   onVerify,
   onRevoke,
 }: {
+  title: string;
   verified: boolean;
-  hasFacePhoto: boolean;
-  hasApprovedId: boolean;
+  checks: { ok: boolean; label: string }[];
+  readyHint: string;
+  verifyLabel: string;
   busy: boolean;
   onVerify: () => void;
   onRevoke: () => void;
 }) {
   if (verified) {
     return (
-      <div className="flex justify-end border-t border-black/5 pt-3">
+      <div className="flex items-center justify-between gap-3 border-t border-black/5 pt-3">
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+          <BadgeCheck size={14} /> {title}: verified
+        </p>
         <button
           type="button"
           onClick={onRevoke}
           disabled={busy}
           className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-60"
         >
-          Revoke verification
+          Revoke
         </button>
       </div>
     );
   }
 
-  const ready = hasFacePhoto && hasApprovedId;
-  const check = (ok: boolean, label: string) => (
-    <li className={`flex items-center gap-1.5 ${ok ? "text-emerald-700" : "text-ink-muted"}`}>
-      {ok ? <CheckCircle2 size={14} /> : <XCircle size={14} />} {label}
-    </li>
-  );
+  const ready = checks.every((c) => c.ok);
   return (
     <div className="space-y-3 border-t border-black/5 pt-3">
+      <p className="text-xs font-semibold text-ink">{title}</p>
       <ul className="space-y-1 text-xs">
-        {check(hasFacePhoto, "Face photo taken")}
-        {check(hasApprovedId, "ID card approved")}
+        {checks.map((c) => (
+          <li key={c.label} className={`flex items-center gap-1.5 ${c.ok ? "text-emerald-700" : "text-ink-muted"}`}>
+            {c.ok ? <CheckCircle2 size={14} /> : <XCircle size={14} />} {c.label}
+          </li>
+        ))}
       </ul>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-ink-muted">
-          {ready ? "Compare the face photo with the ID before verifying." : "Both are needed before this seller can be verified."}
-        </p>
+        <p className="text-xs text-ink-muted">{ready ? readyHint : "All of these are needed before verifying."}</p>
         <button
           type="button"
           onClick={onVerify}
           disabled={!ready || busy}
           className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
         >
-          <BadgeCheck size={14} /> Verify seller
+          <BadgeCheck size={14} /> {verifyLabel}
         </button>
       </div>
     </div>
