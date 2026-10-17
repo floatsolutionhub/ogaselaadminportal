@@ -183,7 +183,7 @@ export function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-ink-muted">
-          Moderator, Finance Admin, and Super Admin accounts only.
+          Staff accounts only.
         </p>
       </div>
     </AuthShell>
