@@ -220,6 +220,8 @@ export interface Category {
   isFreeEligible: boolean;
   attributeSchemaVersion: number;
   imageUrl: string | null;
+  /** Buyers can request office pickup here. On a top-level category it covers every subcategory. */
+  isOfficePickupEligible: boolean;
 }
 
 // Ogasela.Application/Moderation/ListingReview/GetPendingListingsQuery.cs - an ad waiting for approval.
@@ -482,7 +484,7 @@ export interface AdminDisputeDetail {
 // ---- Revenue (AdminRevenueController) - every amount is in kobo ----
 
 export type TransactionType = "PlanPurchase" | "AdSpendTopUp" | "Refund";
-export type TransactionStatus = "Pending" | "Success" | "Failed" | "Refunded";
+export type TransactionStatus = "Pending" | "Success" | "Failed" | "Refunded" | "Cancelled";
 
 export interface RevenueSummary {
   from: string;
@@ -604,4 +606,127 @@ export interface AdminProfileChangePage {
   page: number;
   pageSize: number;
   totalCount: number;
+}
+
+// ---- Office pickup (Ogasela.Api/Controllers/Admin/AdminOfficePickupsController.cs). Amounts are in kobo. ----
+
+export type OfficePickupStatus =
+  | "AwaitingPayment"
+  | "PaymentFailed"
+  | "PaymentCancelled"
+  | "PaymentConfirmed"
+  | "ItemReceived"
+  | "InspectionPassed"
+  | "InspectionFailed"
+  | "ReadyForCollection"
+  | "OutForDelivery"
+  | "Completed"
+  | "Refunded";
+
+export type OfficePickupFulfilment = "BranchCollection" | "HomeDelivery";
+
+export interface AdminOfficePickupListItem {
+  id: string;
+  reference: string;
+  listingTitle: string;
+  buyerName: string | null;
+  sellerName: string | null;
+  branchName: string;
+  status: OfficePickupStatus;
+  statusLabel: string;
+  totalKobo: number;
+  cancellationRequested: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminOfficePickupPage {
+  items: AdminOfficePickupListItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+export interface OfficeBranchSummary {
+  id: string;
+  name: string;
+  address: string;
+  state: string;
+  city: string | null;
+  phone: string | null;
+  openingHours: string | null;
+  latitude: number;
+  longitude: number;
+}
+
+export interface AdminOfficePickupParty {
+  userId: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface AdminOfficePickupActivity {
+  status: OfficePickupStatus;
+  title: string;
+  note: string | null;
+  actorName: string | null;
+  createdAt: string;
+}
+
+export interface AdminOfficePickupDetail {
+  id: string;
+  reference: string;
+  listingId: string;
+  listingTitle: string;
+  listingStatus: ListingStatus | null;
+  listingThumbnailUrl: string | null;
+  status: OfficePickupStatus;
+  statusLabel: string;
+  itemPriceKobo: number;
+  serviceFeeKobo: number;
+  totalKobo: number;
+  paymentReference: string | null;
+  paidAt: string | null;
+  branch: OfficeBranchSummary;
+  buyer: AdminOfficePickupParty;
+  seller: AdminOfficePickupParty;
+  fulfilment: OfficePickupFulfilment | null;
+  deliveryAddress: string | null;
+  cancellationRequestedAt: string | null;
+  cancellationReason: string | null;
+  cancellationFeeKobo: number | null;
+  refundedKobo: number | null;
+  refundedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  canRefund: boolean;
+  refundPreviewKobo: number;
+  cancellationFeePreviewKobo: number;
+  nextStatuses: OfficePickupStatus[];
+  activities: AdminOfficePickupActivity[];
+}
+
+export interface AdminOfficeBranch extends OfficeBranchSummary {
+  isActive: boolean;
+  openRequests: number;
+}
+
+export interface SaveOfficeBranchRequest {
+  name: string;
+  address: string;
+  state: string;
+  city: string | null;
+  phone: string | null;
+  openingHours: string | null;
+  latitude: number;
+  longitude: number;
+  isActive: boolean;
+}
+
+export interface OfficePickupCategory {
+  id: string;
+  name: string;
+  parentCategoryId: string | null;
+  isOfficePickupEligible: boolean;
 }

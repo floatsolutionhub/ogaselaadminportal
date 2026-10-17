@@ -9,6 +9,7 @@ export function getCategories(): Promise<Category[]> {
 export interface CreateCategoryInput {
   name: string;
   isFreeEligible: boolean;
+  isOfficePickupEligible: boolean;
   image: File | null;
   /** Required (at least one) for a top-level category - the API saves them together. */
   subcategories: string[];
@@ -18,18 +19,25 @@ export function createCategory(input: CreateCategoryInput): Promise<Category> {
   const formData = new FormData();
   formData.append("name", input.name);
   formData.append("isFreeEligible", String(input.isFreeEligible));
+  formData.append("isOfficePickupEligible", String(input.isOfficePickupEligible));
   if (input.image) formData.append("image", input.image);
   for (const subcategory of input.subcategories) formData.append("subcategories", subcategory);
   return api.postForm<Category>("/admin/categories", formData);
 }
 
 /** Adds one more subcategory to an existing top-level category; inherits its free-eligibility. */
-export function createSubcategory(parent: Category, name: string, image: File | null): Promise<Category> {
+export function createSubcategory(
+  parent: Category,
+  name: string,
+  image: File | null,
+  isOfficePickupEligible: boolean,
+): Promise<Category> {
   const formData = new FormData();
   formData.append("name", name);
   formData.append("parentCategoryId", parent.id);
   formData.append("isFreeEligible", String(parent.isFreeEligible));
   formData.append("attributeSchemaVersion", String(parent.attributeSchemaVersion));
+  formData.append("isOfficePickupEligible", String(isOfficePickupEligible));
   if (image) formData.append("image", image);
   return api.postForm<Category>("/admin/categories", formData);
 }
@@ -38,6 +46,7 @@ export interface UpdateCategoryInput {
   name: string;
   /** Ignored for a subcategory - it always follows its parent's setting. */
   isFreeEligible: boolean;
+  isOfficePickupEligible: boolean;
   /** A new image replaces the current one; null keeps it. */
   image: File | null;
 }
@@ -55,6 +64,7 @@ export function updateCategory(category: Category, input: UpdateCategoryInput): 
     String(category.parentCategoryId ? category.isFreeEligible : input.isFreeEligible),
   );
   formData.append("attributeSchemaVersion", String(category.attributeSchemaVersion));
+  formData.append("isOfficePickupEligible", String(input.isOfficePickupEligible));
   if (input.image) formData.append("image", input.image);
   return api.putForm<Category>(`/admin/categories/${category.id}`, formData);
 }

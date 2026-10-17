@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Pencil, Plus, Shapes, X } from "lucide-react";
+import { PackageCheck, Pencil, Plus, Shapes, X } from "lucide-react";
 import { useApiQuery } from "../lib/useApiQuery";
 import { ApiError } from "../lib/apiClient";
 import { createCategory, createSubcategory, getCategories, updateCategory } from "../services/categories";
@@ -14,12 +14,47 @@ import { Modal } from "../components/Modal";
 
 type CategoryWithChildren = Category & { children: Category[] };
 
+/** The "Office Pickup Allowed" checkbox, shared by every category form. */
+function OfficePickupCheckbox({
+  checked,
+  onChange,
+  coveredByParent,
+  hint,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  /** Set when the parent category already allows it - the subcategory is covered and can't opt out. */
+  coveredByParent?: string;
+  hint?: string;
+}) {
+  return (
+    <div>
+      <label className={`flex items-center gap-2 text-sm ${coveredByParent ? "text-ink-muted" : "text-ink"}`}>
+        <input
+          type="checkbox"
+          checked={checked || !!coveredByParent}
+          disabled={!!coveredByParent}
+          onChange={(event) => onChange(event.target.checked)}
+          className="h-4 w-4 accent-brand-500"
+        />
+        Office Pickup Allowed
+      </label>
+      <p className="mt-1 text-xs text-ink-muted">
+        {coveredByParent
+          ? `Allowed on all of ${coveredByParent} - turn it off there to set subcategories one by one.`
+          : (hint ?? "Shows the Request Office Pickup button on ads here.")}
+      </p>
+    </div>
+  );
+}
+
 const inputClassName =
   "w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100";
 
 function NewCategoryModal({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const [name, setName] = useState("");
   const [isFreeEligible, setIsFreeEligible] = useState(true);
+  const [isOfficePickupEligible, setIsOfficePickupEligible] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const [subcategories, setSubcategories] = useState<string[]>([""]);
   const [formError, setFormError] = useState<string | null>(null);
@@ -31,6 +66,7 @@ function NewCategoryModal({ open, onClose, onCreated }: { open: boolean; onClose
   function reset() {
     setName("");
     setIsFreeEligible(true);
+    setIsOfficePickupEligible(false);
     setImage(null);
     setSubcategories([""]);
     setFormError(null);
@@ -51,7 +87,13 @@ function NewCategoryModal({ open, onClose, onCreated }: { open: boolean; onClose
 
     setIsSaving(true);
     try {
-      await createCategory({ name: name.trim(), isFreeEligible, image, subcategories: filledSubcategories });
+      await createCategory({
+        name: name.trim(),
+        isFreeEligible,
+        isOfficePickupEligible,
+        image,
+        subcategories: filledSubcategories,
+      });
       reset();
       onCreated();
     } catch (err) {
@@ -86,6 +128,12 @@ function NewCategoryModal({ open, onClose, onCreated }: { open: boolean; onClose
           />
           Sellers can post here on the Free plan
         </label>
+
+        <OfficePickupCheckbox
+          checked={isOfficePickupEligible}
+          onChange={setIsOfficePickupEligible}
+          hint="Applies to every subcategory. Leave it off to allow it on individual subcategories later."
+        />
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-ink">Subcategories</label>
@@ -161,12 +209,14 @@ function AddSubcategoryModal({
 }) {
   const [name, setName] = useState("");
   const [image, setImage] = useState<File | null>(null);
+  const [isOfficePickupEligible, setIsOfficePickupEligible] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   function close() {
     setName("");
     setImage(null);
+    setIsOfficePickupEligible(false);
     setFormError(null);
     onClose();
   }
@@ -176,9 +226,10 @@ function AddSubcategoryModal({
     setIsSaving(true);
     setFormError(null);
     try {
-      await createSubcategory(parent, name.trim(), image);
+      await createSubcategory(parent, name.trim(), image, isOfficePickupEligible);
       setName("");
       setImage(null);
+      setIsOfficePickupEligible(false);
       onCreated();
     } catch (err) {
       setFormError(err instanceof ApiError ? err.message : "Could not add this subcategory.");
@@ -195,6 +246,11 @@ function AddSubcategoryModal({
           <input value={name} onChange={(event) => setName(event.target.value)} className={inputClassName} />
         </div>
         <FileInput label="Subcategory image (optional)" file={image} onChange={setImage} accept="image/*" />
+        <OfficePickupCheckbox
+          checked={isOfficePickupEligible}
+          onChange={setIsOfficePickupEligible}
+          coveredByParent={parent?.isOfficePickupEligible ? parent.name : undefined}
+        />
         {formError && <ErrorBanner message={formError} />}
         <div className="flex justify-end gap-3">
           <button
@@ -221,15 +277,19 @@ function AddSubcategoryModal({
 
 function EditCategoryModal({
   category,
+  parent,
   onClose,
   onSaved,
 }: {
   category: Category | null;
+  /** The subcategory's parent, when editing a subcategory. */
+  parent: Category | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const [name, setName] = useState("");
   const [isFreeEligible, setIsFreeEligible] = useState(true);
+  const [isOfficePickupEligible, setIsOfficePickupEligible] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -240,6 +300,7 @@ function EditCategoryModal({
     setLoadedId(category.id);
     setName(category.name);
     setIsFreeEligible(category.isFreeEligible);
+    setIsOfficePickupEligible(category.isOfficePickupEligible);
     setImage(null);
     setFormError(null);
   }
@@ -247,7 +308,11 @@ function EditCategoryModal({
   const isSubcategory = !!category?.parentCategoryId;
   const trimmed = name.trim();
   const changed =
-    !!category && (trimmed !== category.name || image !== null || (!isSubcategory && isFreeEligible !== category.isFreeEligible));
+    !!category &&
+    (trimmed !== category.name ||
+      image !== null ||
+      isOfficePickupEligible !== category.isOfficePickupEligible ||
+      (!isSubcategory && isFreeEligible !== category.isFreeEligible));
   const canSave = trimmed.length > 0 && changed && !isSaving;
 
   function close() {
@@ -260,7 +325,7 @@ function EditCategoryModal({
     setIsSaving(true);
     setFormError(null);
     try {
-      await updateCategory(category, { name: trimmed, isFreeEligible, image });
+      await updateCategory(category, { name: trimmed, isFreeEligible, isOfficePickupEligible, image });
       setLoadedId(null);
       onSaved();
     } catch (err) {
@@ -304,6 +369,13 @@ function EditCategoryModal({
             <p className="mt-1 text-xs text-ink-muted">Applies to all of its subcategories too. Ads already live aren't affected.</p>
           </div>
         )}
+
+        <OfficePickupCheckbox
+          checked={isOfficePickupEligible}
+          onChange={setIsOfficePickupEligible}
+          coveredByParent={isSubcategory && parent?.isOfficePickupEligible ? parent.name : undefined}
+          hint={isSubcategory ? undefined : "Applies to every subcategory, including live ads."}
+        />
 
         {formError && <ErrorBanner message={formError} />}
 
@@ -391,7 +463,10 @@ export function CategoriesPage() {
                     {category.children.length} {category.children.length === 1 ? "subcategory" : "subcategories"}
                   </p>
                 </div>
-                {category.isFreeEligible ? <Badge tone="success">Free plan</Badge> : <Badge>Paid only</Badge>}
+                <div className="flex flex-col items-end gap-1">
+                  {category.isFreeEligible ? <Badge tone="success">Free plan</Badge> : <Badge>Paid only</Badge>}
+                  {category.isOfficePickupEligible && <Badge tone="brand">Office pickup</Badge>}
+                </div>
                 <button
                   type="button"
                   onClick={() => setEditing(category)}
@@ -413,6 +488,9 @@ export function CategoriesPage() {
                       className="group inline-flex items-center gap-1 rounded-full bg-black/5 px-2.5 py-1 text-xs font-medium text-ink hover:bg-brand-50 hover:text-brand-700"
                     >
                       {child.name}
+                      {(category.isOfficePickupEligible || child.isOfficePickupEligible) && (
+                        <PackageCheck size={11} className="text-brand-600" aria-label="Office pickup allowed" />
+                      )}
                       <Pencil size={10} className="text-ink-muted group-hover:text-brand-600" />
                     </button>
                   ))}
@@ -443,6 +521,7 @@ export function CategoriesPage() {
       />
       <EditCategoryModal
         category={editing}
+        parent={editing?.parentCategoryId ? (data?.find((c) => c.id === editing.parentCategoryId) ?? null) : null}
         onClose={() => setEditing(null)}
         onSaved={() => {
           setEditing(null);

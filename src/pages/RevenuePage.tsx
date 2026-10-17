@@ -52,6 +52,7 @@ const STATUS_STYLE: Record<TransactionStatus, { label: string; tone: "neutral" |
   Success: { label: "Successful", tone: "success" },
   Failed: { label: "Failed", tone: "danger" },
   Refunded: { label: "Refunded", tone: "neutral" },
+  Cancelled: { label: "Cancelled by payer", tone: "neutral" },
 };
 
 function isoDate(date: Date): string {

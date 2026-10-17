@@ -25,6 +25,8 @@ import { ApprovalsSettingsPage } from "./pages/settings/ApprovalsSettingsPage";
 import { NotificationsSettingsPage } from "./pages/settings/NotificationsSettingsPage";
 import { ChatSafetySettingsPage } from "./pages/settings/ChatSafetySettingsPage";
 import { DisputeDetailPage } from "./pages/DisputeDetailPage";
+import { OfficePickupsPage } from "./pages/OfficePickupsPage";
+import { OfficePickupDetailPage } from "./pages/OfficePickupDetailPage";
 import { UserDetailPage } from "./pages/UserDetailPage";
 import { StaffOnboardPage } from "./pages/StaffOnboardPage";
 import { StaffDetailPage } from "./pages/StaffDetailPage";
@@ -143,6 +145,22 @@ export default function App() {
               element={
                 <RequirePermission permission="disputes.view">
                   <DisputeDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="/office-pickups"
+              element={
+                <RequirePermission permission="officepickup.view">
+                  <OfficePickupsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="/office-pickups/:id"
+              element={
+                <RequirePermission permission="officepickup.view">
+                  <OfficePickupDetailPage />
                 </RequirePermission>
               }
             />

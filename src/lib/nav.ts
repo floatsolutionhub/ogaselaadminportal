@@ -16,6 +16,7 @@ import {
   Newspaper,
   Scale,
   Banknote,
+  PackageCheck,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -42,6 +43,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/change-requests", label: "Change Requests", icon: UserCog, permission: "users.changes.review" },
   { to: "/ads", label: "All Ads", icon: Newspaper, permission: "listings.view" },
   { to: "/disputes", label: "Disputes & Resolutions", icon: Scale, permission: "disputes.view" },
+  { to: "/office-pickups", label: "Office Pickup", icon: PackageCheck, permission: "officepickup.view" },
   { to: "/staff", label: "Staff", icon: Users, permission: "staff.view" },
   { to: "/departments", label: "Departments", icon: Building2, permission: "rbac.department.manage" },
   { to: "/roles", label: "Roles", icon: KeySquare, permission: "rbac.role.manage" },
