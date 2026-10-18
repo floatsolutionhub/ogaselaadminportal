@@ -58,6 +58,28 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
+/** Authenticated file download (e.g. a CSV export) - saves the response under the server's file name. */
+async function download(path: string, fallbackName: string): Promise<void> {
+  const headers = new Headers();
+  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+  const response = await fetch(`${BASE_URL}${path}`, { headers });
+  if (!response.ok) {
+    const problem = (response.headers.get("content-type") ?? "").includes("json")
+      ? ((await response.json()) as ProblemDetails)
+      : undefined;
+    throw new ApiError(response.status, problem?.detail ?? problem?.title ?? response.statusText ?? "Download failed", problem?.title);
+  }
+
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const fileName = /filename="?([^";]+)"?/i.exec(disposition)?.[1] ?? fallbackName;
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export const api = {
   get: <T>(path: string) => request<T>(path, { method: "GET" }),
   post: <T>(path: string, data?: unknown) =>
@@ -70,4 +92,5 @@ export const api = {
   /** For file uploads (multipart/form-data) - pass a FormData body, e.g. staff KYC documents. */
   postForm: <T>(path: string, formData: FormData) => request<T>(path, { method: "POST", body: formData }),
   putForm: <T>(path: string, formData: FormData) => request<T>(path, { method: "PUT", body: formData }),
+  download,
 };

@@ -18,6 +18,7 @@ import {
   Banknote,
   PackageCheck,
   Settings,
+  ListChecks,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "./auth";
@@ -44,6 +45,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/ads", label: "All Ads", icon: Newspaper, permission: "listings.view" },
   { to: "/disputes", label: "Disputes & Resolutions", icon: Scale, permission: "disputes.view" },
   { to: "/office-pickups", label: "Office Pickup", icon: PackageCheck, permission: "officepickup.view" },
+  { to: "/waitlist", label: "Waitlist & Testers", icon: ListChecks, permission: "marketing.interest.view" },
   { to: "/staff", label: "Staff", icon: Users, permission: "staff.view" },
   { to: "/departments", label: "Departments", icon: Building2, permission: "rbac.department.manage" },
   { to: "/roles", label: "Roles", icon: KeySquare, permission: "rbac.role.manage" },

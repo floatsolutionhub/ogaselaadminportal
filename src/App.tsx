@@ -15,6 +15,7 @@ import { DataErasurePage } from "./pages/DataErasurePage";
 import { StaffListPage } from "./pages/StaffListPage";
 import { UsersPage } from "./pages/UsersPage";
 import { ChangeRequestsPage } from "./pages/ChangeRequestsPage";
+import { InterestSignupsPage } from "./pages/InterestSignupsPage";
 import { AdsPage } from "./pages/AdsPage";
 import { AdDetailPage } from "./pages/AdDetailPage";
 import { DisputesPage } from "./pages/DisputesPage";
@@ -177,6 +178,14 @@ export default function App() {
               element={
                 <RequirePermission permission="users.changes.review">
                   <ChangeRequestsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="/waitlist"
+              element={
+                <RequirePermission permission="marketing.interest.view">
+                  <InterestSignupsPage />
                 </RequirePermission>
               }
             />

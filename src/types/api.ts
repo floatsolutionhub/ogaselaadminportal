@@ -608,6 +608,45 @@ export interface AdminProfileChangePage {
   totalCount: number;
 }
 
+// Waitlist & testers - Ogasela.Api/Controllers/Admin/AdminInterestSignupsController.cs
+
+export type InterestKind = "Tester" | "Waitlist";
+export type InterestIntent = "Buy" | "Sell" | "Both";
+export type InterestDevicePlatform = "Android" | "IOS";
+export type InterestSignupStatus = "New" | "Contacted" | "Invited" | "Joined" | "Declined";
+
+export interface AdminInterestSignup {
+  id: string;
+  kind: InterestKind;
+  name: string;
+  email: string;
+  phone: string | null;
+  state: string | null;
+  intent: InterestIntent | null;
+  devicePlatform: InterestDevicePlatform | null;
+  status: InterestSignupStatus;
+  /** Staff-only. */
+  notes: string | null;
+  consentedAt: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+export interface AdminInterestSignupPage {
+  items: AdminInterestSignup[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+export interface InterestSignupSummary {
+  waitlistTotal: number;
+  waitlistNew: number;
+  testersTotal: number;
+  testersNew: number;
+  last7Days: number;
+}
+
 // ---- Office pickup (Ogasela.Api/Controllers/Admin/AdminOfficePickupsController.cs). Amounts are in kobo. ----
 
 export type OfficePickupStatus =
