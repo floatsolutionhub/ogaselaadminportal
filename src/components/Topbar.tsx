@@ -1,6 +1,7 @@
 import { LogOut } from "lucide-react";
 import { useAuth } from "../lib/auth";
 import { Badge } from "./Badge";
+import { NotificationBell } from "./NotificationBell";
 
 const ROLE_LABEL: Record<string, string> = {
   SuperAdmin: "Super Admin",
@@ -22,6 +23,7 @@ export function Topbar({ title }: { title: string }) {
       <h1 className="text-lg font-semibold text-ink">{title}</h1>
 
       <div className="flex items-center gap-4">
+        <NotificationBell />
         <div className="flex items-center gap-3 border-r border-black/5 pr-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-brand-400 to-brand-600 text-sm font-semibold text-white shadow-[0_2px_6px_rgba(11,110,79,0.3)]">
             {initial}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { BadgeCheck, Search, UserRound } from "lucide-react";
 import { getUsers } from "../services/users";
 import { useApiQuery } from "../lib/useApiQuery";
@@ -19,8 +19,17 @@ export function UsersPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<AppUserRole | "">("");
-  const [status, setStatus] = useState<AppUserStatusFilter>("All");
+  // ?status= lets the notification bell open the list already filtered (e.g. DocumentsPending).
+  const [params] = useSearchParams();
+  const statusParam = params.get("status") as AppUserStatusFilter | null;
+  const [status, setStatus] = useState<AppUserStatusFilter>(statusParam ?? "All");
   const [page, setPage] = useState(1);
+  useEffect(() => {
+    if (statusParam) {
+      setStatus(statusParam);
+      setPage(1);
+    }
+  }, [statusParam]);
 
   // Search as the admin types, without a request per keystroke.
   useEffect(() => {
@@ -85,6 +94,7 @@ export function UsersPage() {
             options={[
               { value: "Active", label: "Active" },
               { value: "Suspended", label: "Suspended" },
+              { value: "DocumentsPending", label: "Documents to review" },
             ]}
           />
         </div>

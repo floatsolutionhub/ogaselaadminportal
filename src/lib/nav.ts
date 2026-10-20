@@ -19,6 +19,7 @@ import {
   PackageCheck,
   Settings,
   ListChecks,
+  MessageSquareQuote,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "./auth";
@@ -51,6 +52,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/roles", label: "Roles", icon: KeySquare, permission: "rbac.role.manage" },
   { to: "/categories", label: "Categories", icon: Shapes, requireSuperAdmin: true },
   { to: "/announcements", label: "Announcements", icon: Megaphone, requireSuperAdmin: true },
+  { to: "/testimonials", label: "Testimonials", icon: MessageSquareQuote, permission: "marketing.testimonials.manage" },
   { to: "/locations", label: "Locations", icon: MapPin, permission: "geo.state.manage" },
   { to: "/audit-log", label: "Audit Log", icon: ScrollText, permission: "audit.log.view" },
   { to: "/data-erasure", label: "Data Erasure", icon: UserX, permission: "dataprivacy.erase" },

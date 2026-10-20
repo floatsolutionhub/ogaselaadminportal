@@ -5,15 +5,16 @@ import {
   ArrowUpRight,
   Banknote,
   CheckCircle2,
+  HandCoins,
+  PackageCheck,
   RotateCcw,
   Search,
   Store,
   TrendingUp,
   Undo2,
-  Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ApiError } from "../lib/apiClient";
 import { useApiQuery } from "../lib/useApiQuery";
 import { formatDateTime, formatKobo, formatNumber } from "../lib/format";
@@ -30,9 +31,7 @@ import { Modal } from "../components/Modal";
 
 const PAGE_SIZE = 25;
 
-// Validated pair (scripts/validate_palette.js): passes CVD separation and contrast on the light surface.
 const REVENUE_COLOR = "#108f60";
-const TOPUP_COLOR = "#5b5bd6";
 
 const PRESETS = [
   { key: "7d", label: "7 days", days: 7 },
@@ -46,6 +45,9 @@ const TYPE_LABEL: Record<TransactionType, string> = {
   AdSpendTopUp: "Wallet top-up",
   Refund: "Refund",
 };
+
+/** The wallet is suspended, so there are no new top-ups to filter for - older ones still show in "Any type". */
+const TYPE_FILTERS: TransactionType[] = ["PlanPurchase", "Refund"];
 
 const STATUS_STYLE: Record<TransactionStatus, { label: string; tone: "neutral" | "brand" | "warning" | "danger" | "success" }> = {
   Pending: { label: "Pending", tone: "warning" },
@@ -125,13 +127,14 @@ function ChartTooltip({
   bucket,
 }: {
   active?: boolean;
-  payload?: { dataKey: string; value: number }[];
+  payload?: { dataKey: string; value: number; payload?: { officePickupFeesKobo?: number } }[];
   label?: string;
   bucket: "day" | "month";
 }) {
   if (!active || !payload?.length || !label) return null;
   const date = new Date(label);
   const value = (key: string) => payload.find((p) => p.dataKey === key)?.value ?? 0;
+  const pickupFeesKobo = payload[0].payload?.officePickupFeesKobo ?? 0;
   return (
     <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-xs shadow-sm">
       <p className="mb-1 font-semibold text-ink">
@@ -143,10 +146,12 @@ function ChartTooltip({
         <span className="inline-block h-0.5 w-3 rounded" style={{ background: REVENUE_COLOR }} /> Revenue earned
         <span className="ml-auto pl-3 font-semibold tabular-nums text-ink">{formatKobo(value("revenueKobo"))}</span>
       </p>
-      <p className="flex items-center gap-2 text-ink-muted">
-        <span className="inline-block h-0.5 w-3 rounded border-t-2 border-dashed" style={{ borderColor: TOPUP_COLOR }} /> Wallet top-ups
-        <span className="ml-auto pl-3 font-semibold tabular-nums text-ink">{formatKobo(value("topUpsKobo"))}</span>
-      </p>
+      {pickupFeesKobo > 0 && (
+        <p className="flex items-center gap-2 pl-5 text-ink-muted">
+          incl. office pickup fees
+          <span className="ml-auto pl-3 tabular-nums text-ink">{formatKobo(pickupFeesKobo)}</span>
+        </p>
+      )}
     </div>
   );
 }
@@ -191,7 +196,19 @@ export function RevenuePage() {
   );
 
   const data = summary.data;
-  const planTotal = useMemo(() => (data ? data.byPlan.reduce((sum, p) => sum + p.revenueKobo, 0) : 0), [data]);
+  // Plans, then office pickup fees - together they make up the revenue earned.
+  const bySource = useMemo(
+    () =>
+      data
+        ? [
+            ...data.byPlan.map((p) => ({ name: p.planName, revenueKobo: p.revenueKobo, count: p.count, unit: "plan" })),
+            ...(data.officePickups > 0
+              ? [{ name: "Office pickup fees", revenueKobo: data.officePickupFeesKobo, count: data.officePickups, unit: "pickup" }]
+              : []),
+          ]
+        : [],
+    [data],
+  );
   const totalPages = ledger.data ? Math.max(1, Math.ceil(ledger.data.totalCount / PAGE_SIZE)) : 1;
   const filtered = !!(search || type || status);
 
@@ -232,7 +249,7 @@ export function RevenuePage() {
         <div>
           <h2 className="text-sm font-semibold text-ink">Revenue</h2>
           <p className="text-xs text-ink-muted">
-            What Ogasela earns from promotion plans, the money sellers put into their wallets, and refunds.
+            What Ogasela earns from ad promotion plan payments and office pickup fees, and the refunds it has issued.
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
@@ -296,37 +313,48 @@ export function RevenuePage() {
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <Tile label="Revenue earned" value={formatKobo(data.revenueKobo)} icon={TrendingUp}>
+            <Tile
+              label="Revenue earned"
+              value={formatKobo(data.revenueKobo)}
+              hint={`Plans ${formatKobo(data.planRevenueKobo)} · office pickup fees ${formatKobo(data.officePickupFeesKobo)}`}
+              icon={TrendingUp}
+            >
               <Change current={data.revenueKobo} previous={data.previousRevenueKobo} />
             </Tile>
-            <Tile
-              label="Wallet top-ups collected"
-              value={formatKobo(data.topUpsKobo)}
-              hint={`${formatNumber(data.topUps)} paid · ${formatNumber(data.pendingTopUps)} pending · ${formatNumber(data.failedTopUps)} failed`}
-              icon={Banknote}
-            />
             <Tile
               label="Plan purchases"
               value={formatNumber(data.planPurchases)}
               hint={`${formatNumber(data.payingSellers)} paying seller${data.payingSellers === 1 ? "" : "s"}`}
               icon={Store}
             />
-            <Tile label="Refunds issued" value={formatKobo(data.refundsKobo)} hint={`${formatNumber(data.refunds)} refund${data.refunds === 1 ? "" : "s"}`} icon={Undo2} />
             <Tile
-              label="Held in seller wallets"
-              value={formatKobo(data.walletBalancesKobo)}
-              hint="Paid in but not yet spent - right now, all sellers"
-              icon={Wallet}
+              label="Office pickup fees"
+              value={formatKobo(data.officePickupFeesKobo)}
+              hint={`${formatNumber(data.officePickups)} paid pickup${data.officePickups === 1 ? "" : "s"} · 3% service fee, or 1% kept on a refund`}
+              icon={PackageCheck}
             />
-            <Tile label="All-time revenue" value={formatKobo(data.allTimeRevenueKobo)} hint="Every successful plan purchase to date" icon={TrendingUp} />
+            <Tile
+              label="Pickup payments collected"
+              value={formatKobo(data.officePickupCollectedKobo)}
+              hint="Item price + fee paid by buyers - the item price is owed to sellers"
+              icon={HandCoins}
+            />
+            <Tile
+              label="Refunds issued"
+              value={formatKobo(data.refundsKobo)}
+              hint={`${formatNumber(data.refunds)} refund${data.refunds === 1 ? "" : "s"}, plans and office pickups`}
+              icon={Undo2}
+            />
+            <Tile label="All-time revenue" value={formatKobo(data.allTimeRevenueKobo)} hint="Every plan purchase and office pickup fee to date" icon={TrendingUp} />
           </div>
 
           <Card>
             <h3 className="text-sm font-semibold text-ink">Revenue over time</h3>
             <p className="mb-4 text-xs text-ink-muted">
-              Per {data.bucket}. Revenue is earned when a seller pays for a plan; top-ups are money added to wallets.
+              Per {data.bucket}. Revenue is earned when a seller pays for an ad promotion plan or a buyer pays an office pickup
+              fee.
             </p>
-            {data.revenueKobo === 0 && data.topUpsKobo === 0 ? (
+            {data.revenueKobo === 0 ? (
               <p className="py-12 text-center text-sm text-ink-muted">No payments in this period.</p>
             ) : (
               <div className="h-72">
@@ -352,29 +380,12 @@ export function RevenuePage() {
                       cursor={{ stroke: "#9ca3af", strokeWidth: 1 }}
                       content={(props) => <ChartTooltip {...(props as object)} bucket={data.bucket} />}
                     />
-                    <Legend
-                      verticalAlign="top"
-                      align="right"
-                      height={28}
-                      iconType="plainline"
-                      formatter={(value) => <span className="text-xs text-ink-muted">{value}</span>}
-                    />
                     <Line
                       type="monotone"
                       dataKey="revenueKobo"
                       name="Revenue earned"
                       stroke={REVENUE_COLOR}
                       strokeWidth={2}
-                      dot={false}
-                      activeDot={{ r: 4, stroke: "#fff", strokeWidth: 2 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="topUpsKobo"
-                      name="Wallet top-ups"
-                      stroke={TOPUP_COLOR}
-                      strokeWidth={2}
-                      strokeDasharray="5 4"
                       dot={false}
                       activeDot={{ r: 4, stroke: "#fff", strokeWidth: 2 }}
                     />
@@ -386,22 +397,23 @@ export function RevenuePage() {
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
-              <h3 className="text-sm font-semibold text-ink">Revenue by plan</h3>
-              <p className="mb-4 text-xs text-ink-muted">Share of revenue earned in this period.</p>
-              {data.byPlan.length === 0 ? (
-                <p className="py-6 text-center text-sm text-ink-muted">No plan purchases in this period.</p>
+              <h3 className="text-sm font-semibold text-ink">Revenue by source</h3>
+              <p className="mb-4 text-xs text-ink-muted">Share of revenue earned in this period, by plan and from office pickups.</p>
+              {bySource.length === 0 ? (
+                <p className="py-6 text-center text-sm text-ink-muted">No plan purchases or office pickups in this period.</p>
               ) : (
                 <ul className="space-y-3">
-                  {data.byPlan.map((plan) => {
-                    const share = planTotal === 0 ? 0 : plan.revenueKobo / planTotal;
+                  {bySource.map((source) => {
+                    const share = data.revenueKobo === 0 ? 0 : source.revenueKobo / data.revenueKobo;
                     return (
-                      <li key={plan.planName}>
+                      <li key={source.name}>
                         <div className="flex items-baseline justify-between gap-3 text-sm">
-                          <span className="font-medium text-ink">{plan.planName}</span>
+                          <span className="font-medium text-ink">{source.name}</span>
                           <span className="tabular-nums text-ink">
-                            {formatKobo(plan.revenueKobo)}{" "}
+                            {formatKobo(source.revenueKobo)}{" "}
                             <span className="text-xs text-ink-muted">
-                              · {formatNumber(plan.count)} · {(share * 100).toFixed(0)}%
+                              · {formatNumber(source.count)} {source.unit}
+                              {source.count === 1 ? "" : "s"} · {(share * 100).toFixed(0)}%
                             </span>
                           </span>
                         </div>
@@ -441,7 +453,13 @@ export function RevenuePage() {
 
       <div className="pt-2">
         <h3 className="text-sm font-semibold text-ink">Transactions</h3>
-        <p className="text-xs text-ink-muted">Every wallet payment in the selected period, newest first.</p>
+        <p className="text-xs text-ink-muted">
+          Every plan payment and refund in the selected period, newest first. Office pickup payments are on the{" "}
+          <Link to="/office-pickups" className="font-medium text-brand-600 hover:underline">
+            Office Pickup
+          </Link>{" "}
+          page.
+        </p>
       </div>
 
       <Card className="flex flex-wrap items-end gap-3">
@@ -466,7 +484,7 @@ export function RevenuePage() {
               setPage(1);
             }}
             placeholder="Any type"
-            options={(Object.keys(TYPE_LABEL) as TransactionType[]).map((t) => ({ value: t, label: TYPE_LABEL[t] }))}
+            options={TYPE_FILTERS.map((t) => ({ value: t, label: TYPE_LABEL[t] }))}
           />
         </div>
         <div className="w-40">
@@ -577,7 +595,9 @@ export function RevenuePage() {
         description={
           refunding?.type === "AdSpendTopUp"
             ? `The top-up is refunded to ${refunding.businessName}'s card or bank through the payment gateway, and taken out of their wallet. Their wallet must still hold the amount.`
-            : `The amount goes back into ${refunding?.businessName ?? "the seller"}'s Ogasela wallet. Their ad stays as it is.`
+            : refunding?.gatewayReference
+              ? `The payment is refunded in full to ${refunding.businessName}'s card or bank through the payment gateway. Their ad stays as it is.`
+              : `This plan was paid from ${refunding?.businessName ?? "the seller"}'s Ogasela wallet before it was suspended, so the amount goes back there. Their ad stays as it is.`
         }
       >
         <div className="space-y-4">

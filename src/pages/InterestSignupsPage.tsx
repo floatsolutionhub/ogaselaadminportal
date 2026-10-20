@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { CalendarClock, Download, FlaskConical, ListChecks, NotebookPen, Search, Sparkles, Trash2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { ApiError } from "../lib/apiClient";
 import { useApiQuery } from "../lib/useApiQuery";
 import { useAuth } from "../lib/auth";
@@ -53,8 +54,17 @@ const DEVICE_LABEL = { Android: "Android", IOS: "iPhone (iOS)" } as const;
 export function InterestSignupsPage() {
   const { hasPermission } = useAuth();
   const canManage = hasPermission("marketing.interest.manage");
-  const [kind, setKind] = useState<InterestKind | "">("Waitlist");
-  const [status, setStatus] = useState<InterestSignupStatus | "">("");
+  const [params] = useSearchParams();
+  const statusParam = params.get("status") as InterestSignupStatus | null;
+  // The bell's ?status=New counts both kinds, so it opens the "All" tab.
+  const [kind, setKind] = useState<InterestKind | "">(statusParam ? "" : "Waitlist");
+  const [status, setStatus] = useState<InterestSignupStatus | "">(statusParam ?? "");
+  useEffect(() => {
+    if (statusParam) {
+      setStatus(statusParam);
+      setKind("");
+    }
+  }, [statusParam]);
   const [device, setDevice] = useState<InterestDevicePlatform | "">("");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");

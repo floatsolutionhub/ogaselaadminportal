@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { ShieldCheck, Users, UserPlus } from "lucide-react";
 import { getStaffList, getSuperAdmins } from "../services/staff";
 import { useApiQuery } from "../lib/useApiQuery";
@@ -27,7 +27,12 @@ const STATUS_LABEL: Record<StaffOnboardingStatus, string> = {
 
 export function StaffListPage() {
   const { hasPermission } = useAuth();
-  const [statusFilter, setStatusFilter] = useState<StaffOnboardingStatus | "">("");
+  const [params] = useSearchParams();
+  const statusParam = params.get("status") as StaffOnboardingStatus | null;
+  const [statusFilter, setStatusFilter] = useState<StaffOnboardingStatus | "">(statusParam ?? "");
+  useEffect(() => {
+    if (statusParam) setStatusFilter(statusParam);
+  }, [statusParam]);
 
   const { data, isLoading, error } = useApiQuery(
     () => getStaffList(statusFilter || undefined),

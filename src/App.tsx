@@ -36,6 +36,7 @@ import { RolesPage } from "./pages/RolesPage";
 import { LocationsPage } from "./pages/LocationsPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { AnnouncementsPage } from "./pages/AnnouncementsPage";
+import { TestimonialsPage } from "./pages/TestimonialsPage";
 
 export default function App() {
   return (
@@ -242,6 +243,14 @@ export default function App() {
               element={
                 <RequirePermission requireSuperAdmin>
                   <AnnouncementsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="/testimonials"
+              element={
+                <RequirePermission permission="marketing.testimonials.manage">
+                  <TestimonialsPage />
                 </RequirePermission>
               }
             />

@@ -93,11 +93,16 @@ export function OfficePickupsPage() {
 }
 
 function RequestsTab() {
+  const [params] = useSearchParams();
+  const wantsCancelParam = params.get("cancellationRequested") === "1";
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<OfficePickupStatus | "">("");
   const [branchId, setBranchId] = useState("");
-  const [cancellationRequested, setCancellationRequested] = useState(false);
+  const [cancellationRequested, setCancellationRequested] = useState(wantsCancelParam);
+  useEffect(() => {
+    if (wantsCancelParam) setCancellationRequested(true);
+  }, [wantsCancelParam]);
   const [page, setPage] = useState(1);
 
   useEffect(() => {

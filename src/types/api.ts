@@ -256,9 +256,24 @@ export interface Announcement {
   createdAt: string;
 }
 
+// Ogasela.Application/Marketing/Testimonials/Testimonials.cs - quotes for the ogasela.com homepage.
+export interface Testimonial {
+  id: string;
+  quote: string;
+  name: string;
+  role: string;
+  /** 1 to 5. */
+  rating: number;
+  isPublished: boolean;
+  consentConfirmedAt: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
 // Ogasela.Application/Admin/Users - app users (Buyers/Sellers) for the Users page.
 export type AppUserRole = "Buyer" | "Seller";
-export type AppUserStatusFilter = "All" | "Active" | "Suspended";
+/** DocumentsPending: has an ID or address document waiting for review. */
+export type AppUserStatusFilter = "All" | "Active" | "Suspended" | "DocumentsPending";
 
 export interface AdminUserListItem {
   id: string;
@@ -502,9 +517,18 @@ export interface RevenueSummary {
   payingSellers: number;
   walletBalancesKobo: number;
   allTimeRevenueKobo: number;
-  series: { date: string; revenueKobo: number; topUpsKobo: number }[];
+  /** revenueKobo includes officePickupFeesKobo. */
+  series: { date: string; revenueKobo: number; topUpsKobo: number; officePickupFeesKobo: number }[];
   byPlan: { planName: string; revenueKobo: number; count: number }[];
   topSellers: { userId: string; businessName: string; revenueKobo: number; count: number }[];
+  /** revenueKobo = planRevenueKobo + officePickupFeesKobo. */
+  planRevenueKobo: number;
+  /** The 3% service fee on each paid pickup, or only the 1% cancellation fee once refunded. */
+  officePickupFeesKobo: number;
+  /** Pickups paid for in the period, refunded ones included. */
+  officePickups: number;
+  /** Everything buyers paid for those pickups - the item prices are owed to sellers, not earned. */
+  officePickupCollectedKobo: number;
 }
 
 export interface RevenueTransaction {
@@ -768,4 +792,23 @@ export interface OfficePickupCategory {
   name: string;
   parentCategoryId: string | null;
   isOfficePickupEligible: boolean;
+}
+
+// Ogasela.Application/Admin/PendingActions/PendingActions.cs - the notification bell.
+export type PendingActionKey =
+  | "reports"
+  | "adApprovals"
+  | "manualReview"
+  | "changeRequests"
+  | "userDocuments"
+  | "disputes"
+  | "officePickups"
+  | "pickupRefunds"
+  | "staffApprovals"
+  | "waitlistSignups";
+
+/** Only queues the signed-in staff member can act on are returned, zero counts included. */
+export interface PendingActions {
+  items: { key: PendingActionKey; count: number }[];
+  total: number;
 }

@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
+import { PendingActionsProvider } from "../lib/pendingActions";
 import { IdleLogoutWarning } from "./IdleLogoutWarning";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
@@ -30,15 +31,17 @@ export function AppLayout() {
   const title = resolveTitle(location.pathname);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-surface">
-      <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar title={title} />
-        <main className="scrollbar-thin flex-1 overflow-y-auto bg-linear-to-b from-brand-50/40 via-surface to-surface p-8">
-          <Outlet />
-        </main>
+    <PendingActionsProvider>
+      <div className="flex h-screen overflow-hidden bg-surface">
+        <Sidebar />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <Topbar title={title} />
+          <main className="scrollbar-thin flex-1 overflow-y-auto bg-linear-to-b from-brand-50/40 via-surface to-surface p-8">
+            <Outlet />
+          </main>
+        </div>
+        <IdleLogoutWarning />
       </div>
-      <IdleLogoutWarning />
-    </div>
+    </PendingActionsProvider>
   );
 }
