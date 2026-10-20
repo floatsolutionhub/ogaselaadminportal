@@ -209,6 +209,9 @@ export interface NigeriaCity {
   id: string;
   stateId: string;
   name: string;
+  /** Null until staff set it - such a city isn't offered by "use my current location". */
+  latitude: number | null;
+  longitude: number | null;
   createdAt: string;
 }
 

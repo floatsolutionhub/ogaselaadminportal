@@ -14,6 +14,10 @@ export function getCitiesByState(stateId: string): Promise<NigeriaCity[]> {
   return api.get<NigeriaCity[]>(`/geo/states/${stateId}/cities`);
 }
 
+export function getNearestCity(latitude: number, longitude: number): Promise<{ state: NigeriaState; city: NigeriaCity; distanceKm: number }> {
+  return api.get(`/geo/cities/nearest?latitude=${latitude}&longitude=${longitude}`);
+}
+
 export function getCity(cityId: string): Promise<NigeriaCity> {
   return api.get<NigeriaCity>(`/geo/cities/${cityId}`);
 }
@@ -30,12 +34,16 @@ export function deleteState(id: string): Promise<void> {
   return api.del<void>(`/geo/states/${id}`);
 }
 
-export function createCity(stateId: string, name: string): Promise<NigeriaCity> {
-  return api.post<NigeriaCity>("/geo/cities", { stateId, name });
+/** Where a city is - both or neither. Used by the apps' "use my current location". */
+export type CityCoordinates = { latitude: number | null; longitude: number | null };
+
+export function createCity(stateId: string, name: string, coords: CityCoordinates): Promise<NigeriaCity> {
+  return api.post<NigeriaCity>("/geo/cities", { stateId, name, ...coords });
 }
 
-export function updateCity(id: string, name: string): Promise<NigeriaCity> {
-  return api.put<NigeriaCity>(`/geo/cities/${id}`, { name });
+/** Always send the coordinates: leaving them out clears them. */
+export function updateCity(id: string, name: string, coords: CityCoordinates): Promise<NigeriaCity> {
+  return api.put<NigeriaCity>(`/geo/cities/${id}`, { name, ...coords });
 }
 
 export function deleteCity(id: string): Promise<void> {
